@@ -4,7 +4,7 @@ This repository is based on [CompVis/latent-diffusion](https://github.com/CompVi
 
 Since the original codebase is very big, complex and lack of documentation to fine-tune the original autoencoder and diffusion model.
 
-It is really diffcult to fine tune existing pre trained model to produce good result.
+It is extremely diffcult to fine tune existing pre trained model to produce good result.
 
 
 #### Iusses in the original repository
@@ -35,7 +35,7 @@ This repository provide made the fine tuning setup and inference easy by fixing 
 2. Load and fine tune latent diffusion model
 3. Combine trained autoencoder with latent diffusion model
 4. Inference example for both model
-5. Support easy data and mask loading
+5. Simplified data and mask loading 
 6. Fixed some bug when training inpainting model
 
 
@@ -62,13 +62,43 @@ and activated with:
 conda env create -f ldm/environment.yaml
 conda activate ldm
 ```
-## Finetune your Latent diffusion model
-First, prepare the images and masks with the same format as in kvasir-seg folder
+## Data Loader
+From my experiment for medical images, it is better to produce a square mask instead of using polygon mask. 
+
+If you want to change it, feel free to modify the /ldm/ldm/data/PIL_data.py to change the data loading format. 
+
+All the dataloader used in training are in that .py file and it has simplified.
+
+
+## 1. Finetune the autoencoder
+Since the autoencoder used for the pre-trained inpainting is vq-f4-noattn, we have to stick with it.
+
+First, prepare the images and masks with the same format as in kvasir-seg folder  (we DO NOT need any mask to finetune autoencoder)
+
+Second, modify the data path in config.yaml( it should be in ldm/models/first_stage_models/vq-f4-noattn/config.yaml)
+
+Then, run the following command
+```
+CUDA_VISIBLE_DEVICES=0 python main.py --base ldm/models/first_stage_models/vq-f4-noattn/config.yaml --resume ldm/models/first_stage_models/vq-f4-noattn/model.ckpt --stage 0 -t --gpus 0,
+
+```
+The model is trained with 50% of the original image and 50% of randomly masked image
+
+![rdm-figure](assets/original_and_mask.png)
+
+
+## 2. Comebine the autoencoder with the diffusion model
+Please refer to the combine.ipynb
+## 3. Finetune Latent diffusion model
+First, prepare the images with the same format as in kvasir-seg folder
 
 Second, modify the data path in config.yaml( it should be in ldm/models/ldm/inpainting_big/config.yaml )
 
-Then run the following command
+Then, run the following command
 ```
 CUDA_VISIBLE_DEVICES=0 python main.py --base ldm/models/ldm/inpainting_big/config.yaml --resume /ldm/models/ldm/inpainting_big/last.ckpt --stage 1 -t --gpus 0,
 
 ```
+
+## 4. Load and Inference
+Please refer to those inference notebook.
