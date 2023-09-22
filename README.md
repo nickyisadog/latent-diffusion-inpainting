@@ -81,7 +81,7 @@ You will want to funetune the autoencoder when your data is very different from 
 So, you can skip part 1 and 2.
 
 #### 1. Finetune the autoencoder
-Since the autoencoder used for the pre-trained inpainting is vq-f4-noattn, we have to stick with it.
+Since the autoencoder used for the pre-trained inpainting is [vq-f4-noattn](https://heibox.uni-heidelberg.de/f/9c6681f64bb94338a069/?dl=1), we have to stick with it.
 
 First, prepare the images and masks with the same format as in kvasir-seg folder  (we DO NOT need any mask to finetune autoencoder)
 
@@ -107,7 +107,12 @@ Note that, the mask in here is in square mask, you can disable draw_rectangle_ov
 
 
 
-First, prepare the images with the same format as in kvasir-seg folder
+First, download the pre trained weight and prepare the images with the same format as in kvasir-seg folder
+
+Download the pre-trained weights
+```
+wget -O models/ldm/inpainting_big/last.ckpt https://heibox.uni-heidelberg.de/f/4d9ac7ea40c64582b7c9/?dl=1
+```
 
 Second, modify the data path in config.yaml( it should be in ldm/models/ldm/inpainting_big/config.yaml )
 
