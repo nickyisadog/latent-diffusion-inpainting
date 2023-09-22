@@ -74,7 +74,7 @@ If you want to change it, feel free to modify the /ldm/ldm/data/PIL_data.py to c
 All the dataloader used in training are in that .py file and it has simplified.
 
 ## Usage
-For most of the normal image, you dont need to finetune the autoencoder.
+For most of the normal image, you DO NOT need to finetune the autoencoder.
 
 You will want to funetune the autoencoder when your data is very different from the pretrained dataset, for exmaple endoscopic images. 
 
