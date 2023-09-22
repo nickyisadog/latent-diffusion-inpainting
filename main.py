@@ -1,4 +1,5 @@
-import argparse, os, sys, datetime, glob, importlib, csv
+import argparse, os, sys, glob
+sys.path.append(os.getcwd()+"/ldm")
 import numpy as np
 import time
 import torch
@@ -10,15 +11,19 @@ from omegaconf import OmegaConf
 from torch.utils.data import random_split, DataLoader, Dataset, Subset
 from functools import partial
 from PIL import Image
-
+import datetime
 from pytorch_lightning import seed_everything
 from pytorch_lightning.trainer import Trainer
 from pytorch_lightning.callbacks import ModelCheckpoint, Callback, LearningRateMonitor
 from pytorch_lightning.utilities.distributed import rank_zero_only
 from pytorch_lightning.utilities import rank_zero_info
 
-from ldm.data.base import Txt2ImgIterableBaseDataset
-from ldm.util import instantiate_from_config
+from ldm.ldm.data.base import Txt2ImgIterableBaseDataset
+from ldm.ldm.util import instantiate_from_config
+from ldm.ldm.data import PIL_data
+
+import torchvision.transforms as T
+transform = T.ToPILImage()
 
 
 def get_parser(**parser_kwargs):
@@ -65,7 +70,7 @@ def get_parser(**parser_kwargs):
         "--train",
         type=str2bool,
         const=True,
-        default=False,
+        default=True,
         nargs="?",
         help="train",
     )
@@ -73,7 +78,7 @@ def get_parser(**parser_kwargs):
         "--no-test",
         type=str2bool,
         const=True,
-        default=False,
+        default=True,
         nargs="?",
         help="disable test",
     )
@@ -120,6 +125,14 @@ def get_parser(**parser_kwargs):
         default=True,
         help="scale base-lr by ngpu * batch_size * n_accumulate",
     )
+
+    parser.add_argument(
+        "--stage",
+        type=str,
+        default=True,
+        help="",
+    )
+    
     return parser
 
 
@@ -346,28 +359,28 @@ class ImageLogger(Callback):
             logger = type(pl_module.logger)
 
             is_train = pl_module.training
-            if is_train:
-                pl_module.eval()
+            # if is_train:
+            #     pl_module.eval()
 
-            with torch.no_grad():
-                images = pl_module.log_images(batch, split=split, **self.log_images_kwargs)
+            # with torch.no_grad():
+            #     images = pl_module.log_images(batch, split=split, **self.log_images_kwargs)
 
-            for k in images:
-                N = min(images[k].shape[0], self.max_images)
-                images[k] = images[k][:N]
-                if isinstance(images[k], torch.Tensor):
-                    images[k] = images[k].detach().cpu()
-                    if self.clamp:
-                        images[k] = torch.clamp(images[k], -1., 1.)
+            # for k in images:
+            #     N = min(images[k].shape[0], self.max_images)
+            #     images[k] = images[k][:N]
+            #     if isinstance(images[k], torch.Tensor):
+            #         images[k] = images[k].detach().cpu()
+            #         if self.clamp:
+            #             images[k] = torch.clamp(images[k], -1., 1.)
 
-            self.log_local(pl_module.logger.save_dir, split, images,
-                           pl_module.global_step, pl_module.current_epoch, batch_idx)
+            # self.log_local(pl_module.logger.save_dir, split, images,
+            #                pl_module.global_step, pl_module.current_epoch, batch_idx)
 
-            logger_log_images = self.logger_log_images.get(logger, lambda *args, **kwargs: None)
-            logger_log_images(pl_module, images, pl_module.global_step, split)
+            # logger_log_images = self.logger_log_images.get(logger, lambda *args, **kwargs: None)
+            # logger_log_images(pl_module, images, pl_module.global_step, split)
 
-            if is_train:
-                pl_module.train()
+            # if is_train:
+            pl_module.train()
 
     def check_frequency(self, check_idx):
         if ((check_idx % self.batch_freq) == 0 or (check_idx in self.log_steps)) and (
@@ -468,6 +481,9 @@ if __name__ == "__main__":
     parser = Trainer.add_argparse_args(parser)
 
     opt, unknown = parser.parse_known_args()
+
+
+
     if opt.name and opt.resume:
         raise ValueError(
             "-n/--name and -r/--resume cannot be specified both."
@@ -505,9 +521,16 @@ if __name__ == "__main__":
         nowname = now + name + opt.postfix
         logdir = os.path.join(opt.logdir, nowname)
 
+    logdir=os.getcwd()+"/"+opt.logdir
+
+
     ckptdir = os.path.join(logdir, "checkpoints")
     cfgdir = os.path.join(logdir, "configs")
     seed_everything(opt.seed)
+
+    configs = [OmegaConf.load(cfg) for cfg in opt.base]
+    cli = OmegaConf.from_dotlist(unknown)
+    config = OmegaConf.merge(*configs, cli)
 
     try:
         # init and save configs
@@ -659,16 +682,37 @@ if __name__ == "__main__":
         trainer = Trainer.from_argparse_args(trainer_opt, **trainer_kwargs)
         trainer.logdir = logdir  ###
 
-        # data
-        data = instantiate_from_config(config.data)
-        # NOTE according to https://pytorch-lightning.readthedocs.io/en/latest/datamodules.html
-        # calling these ourselves should not be necessary but it is.
-        # lightning still takes care of proper multiprocessing though
-        data.prepare_data()
-        data.setup()
-        print("#### Data #####")
-        for k in data.datasets:
-            print(f"{k}, {data.datasets[k].__class__.__name__}, {len(data.datasets[k])}")
+
+        # data = instantiate_from_config(config.data)
+        # # NOTE according to https://pytorch-lightning.readthedocs.io/en/latest/datamodules.html
+        # # calling these ourselves should not be necessary but it is.
+        # # lightning still takes care of proper multiprocessing though
+        # data.prepare_data()
+        # data.setup()
+        # print("#### Data #####")
+        # for k in data.datasets:
+        #     print(f"{k}, {data.datasets[k].__class__.__name__}, {len(data.datasets[k])}")
+
+
+        batch_size = config.data['params']['batch_size']
+        img_size = config.data['params']['train']['params']['size']
+        path=config.data['params']['train']['target']
+        
+
+        if opt.stage == str(0):
+            dataSet = PIL_data.InpaintingTrain_autoencoder(img_size,path)
+
+        if opt.stage == str(1):
+            dataSet = PIL_data.InpaintingTrain_ldm(img_size,path)
+
+        data = DataLoader(
+                dataSet,
+                batch_size=batch_size,
+                shuffle=True,
+                num_workers=batch_size * 2,
+        )
+
+
 
         # configure learning rate
         bs, base_lr = config.data.params.batch_size, config.model.base_learning_rate
@@ -716,6 +760,7 @@ if __name__ == "__main__":
         # run
         if opt.train:
             try:
+                print("training......")
                 trainer.fit(model, data)
             except Exception:
                 melk()
@@ -739,3 +784,6 @@ if __name__ == "__main__":
             os.rename(logdir, dst)
         if trainer.global_rank == 0:
             print(trainer.profiler.summary())
+
+
+

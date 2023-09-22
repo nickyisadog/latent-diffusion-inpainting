@@ -65,3 +65,14 @@ model:
         lossconfig:
           target: ldm.modules.losses.contperceptual.DummyLoss
     cond_stage_config: __is_first_stage__
+    
+data:
+  target: main.DataModuleFromConfig
+  params:
+    batch_size: 1
+    wrap: true
+    train:
+      target: "/home/nicky/latent-diffusion-inpainting/kvasir-seg/Kvasir-SEG"
+      params:
+        size: 512
+        crop_size: 256
