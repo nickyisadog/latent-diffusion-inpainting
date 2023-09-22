@@ -33,14 +33,10 @@ model:
 data:
   target: main.DataModuleFromConfig
   params:
-    batch_size: 8
-    num_workers: 12
+    batch_size: 1
     wrap: true
     train:
-      target: ldm.data.openimages.FullOpenImagesTrain
+      target: "/home/nicky/latent-diffusion-inpainting/kvasir-seg/Kvasir-SEG/images"
       params:
-        crop_size: 256
-    validation:
-      target: ldm.data.openimages.FullOpenImagesValidation
-      params:
+        size: 512
         crop_size: 256

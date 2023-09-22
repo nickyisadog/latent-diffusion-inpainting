@@ -69,8 +69,14 @@ If you want to change it, feel free to modify the /ldm/ldm/data/PIL_data.py to c
 
 All the dataloader used in training are in that .py file and it has simplified.
 
+## Usage
+For most of the normal image, you dont need to finetune the autoencoder.
 
-## 1. Finetune the autoencoder
+You will want to funetune the autoencoder when your data is very different from the pretrained dataset, for exmaple endoscopic images. 
+
+So, you can skip part 1 and 2.
+
+#### 1. Finetune the autoencoder
 Since the autoencoder used for the pre-trained inpainting is vq-f4-noattn, we have to stick with it.
 
 First, prepare the images and masks with the same format as in kvasir-seg folder  (we DO NOT need any mask to finetune autoencoder)
@@ -87,9 +93,16 @@ The model is trained with 50% of the original image and 50% of randomly masked i
 ![rdm-figure](assets/original_and_mask.png)
 
 
-## 2. Comebine the autoencoder with the diffusion model
+#### 2. Comebine the autoencoder with the diffusion model
 Please refer to the combine.ipynb
-## 3. Finetune Latent diffusion model
+#### 3. Finetune Latent diffusion model
+
+Note that, the mask in here is in square mask, you can disable draw_rectangle_over_mask function in the /ldm/ldm/data/PIL_data.py to use original mask.
+
+![rdm-figure](assets/abc.png)
+
+
+
 First, prepare the images with the same format as in kvasir-seg folder
 
 Second, modify the data path in config.yaml( it should be in ldm/models/ldm/inpainting_big/config.yaml )
@@ -100,5 +113,5 @@ CUDA_VISIBLE_DEVICES=0 python main.py --base ldm/models/ldm/inpainting_big/confi
 
 ```
 
-## 4. Load and Inference
+#### 4. Load and Inference
 Please refer to those inference notebook.
