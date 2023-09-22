@@ -27,7 +27,7 @@ Without pretraining, it would take 8 V100 GPUs to produce satisfactory result.
 
 With finetuning, 1 3090 is enough for transfer learning to medical images( in my case )
 
-This repository provide made the fine tuning setup and inference easy by fixing some of the bug in the original repo.
+This repository made the fine tuning setup and inference easy by fixing some of the bug in the original repo.
 
 #### Major Changes
 
