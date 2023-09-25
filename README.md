@@ -76,7 +76,7 @@ All the dataloader used in training are in that .py file and it has simplified.
 ## Usage
 For most of the normal image, you DO NOT need to finetune the autoencoder.
 
-You will want to funetune the autoencoder when your data is very different from the pretrained dataset, for exmaple endoscopic images. 
+You will want to funetune the autoencoder ONLY when your data is very different from the pretrained dataset, for exmaple endoscopic images. 
 
 So, you can skip part 1 and 2.
 
