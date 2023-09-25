@@ -118,7 +118,7 @@ Second, modify the data path in config.yaml( it should be in ldm/models/ldm/inpa
 
 Then, run the following command
 ```
-CUDA_VISIBLE_DEVICES=0 python main.py --base ldm/models/ldm/inpainting_big/config.yaml --resume /ldm/models/ldm/inpainting_big/last.ckpt --stage 1 -t --gpus 0,
+CUDA_VISIBLE_DEVICES=0 python main.py --base ldm/models/ldm/inpainting_big/config.yaml --resume ldm/models/ldm/inpainting_big/last.ckpt --stage 1 -t --gpus 0,
 
 ```
 
