@@ -2,6 +2,8 @@ import torch
 import pytorch_lightning as pl
 import torch.nn.functional as F
 from contextlib import contextmanager
+import sys
+sys.path.append('./taming-transformers')
 
 from taming.modules.vqvae.quantize import VectorQuantizer2 as VectorQuantizer
 
